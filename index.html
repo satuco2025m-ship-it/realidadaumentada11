@@ -4,15 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <title>WebAR: Sólidos Geométricos Educativos</title>
-
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    
-    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
 
     <style>
-        /* Reseteo básico y eliminación de scrolls globales */
+        /* 3. ESTILOS ESTRICTOS ANTI-DISTORSIÓN OPTICA */
         body, html {
             margin: 0;
             padding: 0;
@@ -23,180 +22,180 @@
             background-color: #000;
         }
 
-        /* ------------------------------------------- */
-        /* INYECCIÓN ESTABLE Y CONTROL ÓPTICO (ANTI-DISTORSIÓN) */
-        /* ------------------------------------------- */
-        /* Forzamos al canvas de A-Frame y al video inyectado por AR.js a cubrir la pantalla */
-        #arjs-video, .a-canvas {
+        /* Fuerza al video inyectado por AR.js a cubrir la pantalla sin deformar el aspect-ratio */
+        #arjs-video {
             object-fit: cover !important;
             width: 100vw !important;
             height: 100vh !important;
-            position: absolute !important;
-            top: 0 !important;
-            left: 0 !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
         }
 
-        /* ------------------------------------------- */
-        /* INTERFAZ DE USUARIO (UI) FLOTANTE RESPONSIVA */
-        /* ------------------------------------------- */
+        /* Asegura el canvas de A-Frame en el mismo espacio viewport */
+        .a-canvas {
+            object-fit: cover !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+
+        /* INTERFAZ DE USUARIO (UI) FLOTANTE Y RESPONSIVE */
         .ui-container {
-            position: fixed;
+            position: absolute;
             bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
             max-width: 500px;
-            z-index: 9999; /* Z-index ultra alto para evitar solapamiento con el canvas */
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            z-index: 9999; /* Z-Index ultra alto para superponerse al canvas 3D */
+            background: rgba(20, 20, 25, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 12px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
         }
 
-        /* Carrusel horizontal responsive con Scroll Táctil nativo */
-        .ui-menu {
+        /* Configuración del carrusel horizontal con scroll responsivo */
+        .menu-scroller {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             overflow-x: auto;
             overflow-y: hidden;
             white-space: nowrap;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none; /* Oculta scrollbar en Firefox */
-            padding-bottom: 2px;
         }
 
-        /* Oculta scrollbar en Chrome, Safari y Opera */
-        .ui-menu::-webkit-scrollbar {
-            display: none;
+        .menu-scroller::-webkit-scrollbar {
+            display: none; /* Oculta scrollbar en Chrome/Safari */
         }
 
-        /* Estilo general de los botones interactivos */
-        .btn-shape {
-            flex: 0 0 auto; /* Evita que los botones se encojan en pantallas pequeñas */
-            padding: 10px 20px;
+        /* Estilos de los botones del menú interactivo */
+        .btn-solid {
+            flex: 0 0 auto;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
             font-size: 14px;
             font-weight: 600;
-            color: #ffffff;
-            background: rgba(0, 0, 0, 0.6);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 25px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Estado activo (Sólido seleccionado en pantalla) */
-        .btn-shape.active {
-            background: #00ffcc;
-            color: #000000;
-            border-color: #00ffcc;
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+        .btn-solid:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
         }
 
-        /* Indicador educativo superior */
-        .edu-header {
-            position: fixed;
-            top: 20px;
+        .btn-solid.active {
+            background: #3b82f6;
+            color: #ffffff;
+            border-color: #60a5fa;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+        }
+
+        /* Letrero informativo superior */
+        .info-header {
+            position: absolute;
+            top: 16px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.6);
             color: #fff;
             padding: 8px 16px;
             border-radius: 20px;
-            font-size: 14px;
-            text-align: center;
+            font-size: 13px;
             pointer-events: none;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
     </style>
 </head>
 <body>
 
-    <div class="edu-header">Apunta al marcador 'Hiro' para interactuar</div>
+    <div class="info-header">Apunta al marcador 'Hiro' • Usa 1 dedo para rotar y 2 para zoom</div>
 
     <div class="ui-container">
-        <div class="ui-menu">
-            <button class="btn-shape active" onclick="switchShape('cubo', this)">Cubo</button>
-            <button class="btn-shape" onclick="switchShape('esfera', this)">Esfera</button>
-            <button class="btn-shape" onclick="switchShape('cilindro', this)">Cilindro</button>
-            <button class="btn-shape" onclick="switchShape('cono', this)">Cono</button>
+        <div class="menu-scroller">
+            <button class="btn-solid active" onclick="switchSolid('cubo', this)">Cubo</button>
+            <button class="btn-solid" onclick="switchSolid('esfera', this)">Esfera</button>
+            <button class="btn-solid" onclick="switchSolid('cilindro', this)">Cilindro</button>
+            <button class="btn-solid" onclick="switchSolid('cono', this)">Cono</button>
         </div>
     </div>
 
     <a-scene 
-        embedded 
-        vr-mode-ui="enabled: false"
         arjs="sourceType: webcam; videoScaleMode: cover; debugUIEnabled: false;"
+        embedded 
+        vr-mode-ui="enabled: false;"
         gesture-detector
         id="scene">
         
-        <a-marker preset="hiro" id="hiro-marker">
+        <a-assets></a-assets>
+
+        <a-marker 
+            preset="hiro" 
+            raycaster="objects: .clickable"
+            emitevents="true"
+            cursor="fuse: false; rayOrigin: mouse;"
+            id="marker">
             
             <a-entity 
-                id="master-container" 
+                id="master-container"
                 gesture-handler="minScale: 0.1; maxScale: 1.5"
-                position="0 0 0"
                 scale="0.4 0.4 0.4"
+                position="0 0.2 0"
                 rotation="0 0 0">
                 
-                <a-entity id="shape-cubo" visible="true">
+                <a-entity id="solid-cubo" visible="true">
                     <a-box 
-                        position="0 0.5 0" 
                         width="1" height="1" depth="1" 
-                        material="color: #ff3366; roughness: 0.3; metalness: 0.2;">
+                        material="color: #ef4444; roughness: 0.3; metalness: 0.1;">
                     </a-box>
                     <a-box 
-                        position="0 0.5 0" 
-                        width="1" height="1" depth="1" 
-                        scale="1.005 1.005 1.005"
-                        material="color: #ffffff; wireframe: true; wireframeLinewidth: 2;">
+                        width="1.005" height="1.005" depth="1.005" 
+                        material="color: #ffffff; wireframe: true; wireframeLineWidth: 2;">
                     </a-box>
                 </a-entity>
 
-                <a-entity id="shape-esfera" visible="false">
+                <a-entity id="solid-esfera" visible="false">
                     <a-sphere 
-                        position="0 0.5 0" 
-                        radius="0.5" 
-                        material="color: #33ccff; roughness: 0.3; metalness: 0.2;">
+                        radius="0.6" 
+                        material="color: #10b981; roughness: 0.3; metalness: 0.1;">
                     </a-sphere>
                     <a-sphere 
-                        position="0 0.5 0" 
-                        radius="0.5" 
-                        scale="1.005 1.005 1.005"
-                        material="color: #ffffff; wireframe: true; wireframeLinewidth: 1;">
+                        radius="0.603" 
+                        material="color: #ffffff; wireframe: true; wireframeLineWidth: 1.5;">
                     </a-sphere>
                 </a-entity>
 
-                <a-entity id="shape-cilindro" visible="false">
+                <a-entity id="solid-cilindro" visible="false">
                     <a-cylinder 
-                        position="0 0.5 0" 
-                        radius="0.4" height="1" 
-                        material="color: #ffcc00; roughness: 0.3; metalness: 0.2;">
+                        radius="0.5" height="1.2" 
+                        material="color: #f59e0b; roughness: 0.3; metalness: 0.1;">
                     </a-cylinder>
                     <a-cylinder 
-                        position="0 0.5 0" 
-                        radius="0.4" height="1" 
-                        scale="1.005 1.005 1.005"
-                        material="color: #ffffff; wireframe: true; wireframeLinewidth: 1.5;">
+                        radius="0.5025" height="1.206" 
+                        material="color: #ffffff; wireframe: true; wireframeLineWidth: 1.5;">
                     </a-cylinder>
                 </a-entity>
 
-                <a-entity id="shape-cono" visible="false">
+                <a-entity id="solid-cono" visible="false">
                     <a-cone 
-                        position="0 0.5 0" 
-                        radius-bottom="0.5" radius-top="0" height="1" 
-                        material="color: #9933ff; roughness: 0.3; metalness: 0.2;">
+                        radius-bottom="0.6" radius-top="0" height="1.2" 
+                        material="color: #8b5cf6; roughness: 0.3; metalness: 0.1;">
                     </a-cone>
                     <a-cone 
-                        position="0 0.5 0" 
-                        radius-bottom="0.5" radius-top="0" height="1" 
-                        scale="1.005 1.005 1.005"
-                        material="color: #ffffff; wireframe: true; wireframeLinewidth: 1.5;">
+                        radius-bottom="0.603" radius-top="0" height="1.206" 
+                        material="color: #ffffff; wireframe: true; wireframeLineWidth: 1.5;">
                     </a-cone>
                 </a-entity>
 
@@ -204,67 +203,57 @@
         </a-marker>
 
         <a-entity camera></a-entity>
-    </scene>
+    </a-scene>
 
     <script>
-        // Referencias principales del DOM
+        const solids = ['cubo', 'esfera', 'cilindro', 'cono'];
         const masterContainer = document.getElementById('master-container');
-        const shapes = {
-            cubo: document.getElementById('shape-cubo'),
-            esfera: document.getElementById('shape-esfera'),
-            cilindro: document.getElementById('shape-cilindro'),
-            cono: document.getElementById('shape-cono')
-        };
+        const scene = document.getElementById('scene');
 
         /**
-         * LÓGICA DE CONTROL DE VISIBILIDAD: Alterna entre figuras geométricas
-         * y resetea las matrices de transformación del contenedor maestro.
+         * Manejador de intercambio de visualización de sólidos geométricos
+         * Resetea matrices de transformación para evitar la propagación de deformaciones previas.
          */
-        function switchShape(selectedKey, buttonElement) {
+        function switchSolid(selectedSolid, buttonElement) {
             // 1. Alternar visibilidad de las entidades 3D
-            for (const key in shapes) {
-                if (shapes.hasOwnProperty(key)) {
-                    shapes[key].setAttribute('visible', key === selectedKey);
+            solids.forEach(solid => {
+                const entity = document.getElementById(`solid-${solid}`);
+                if (entity) {
+                    entity.setAttribute('visible', solid === selectedSolid);
                 }
-            }
+            });
 
-            // 2. Actualizar las clases '.active' de la interfaz de usuario
-            const buttons = document.querySelectorAll('.btn-shape');
-            buttons.forEach(btn => btn.classList.remove('active'));
+            // 2. Actualizar estados visuales de la UI (Clase activa)
+            document.querySelectorAll('.btn-solid').forEach(btn => {
+                btn.classList.remove('active');
+            });
             buttonElement.classList.add('active');
 
-            // 3. RESETEO DE MATRICES INTERACTIVAS: Evita deformaciones heredadas del pinch-to-zoom previo
+            // 3. Reseteo Estricto de Transformación de la Entidad Maestra
+            // Evita que un zoom o rotación exagerada destruya la experiencia del siguiente sólido escolar
             masterContainer.setAttribute('scale', '0.4 0.4 0.4');
             masterContainer.setAttribute('rotation', '0 0 0');
         }
 
         /**
-         * PARCHE DE OPTIMIZACIÓN ÓPTICA (ANTI-DISTORSIÓN):
-         * Cuando la cámara inicializa, forzamos un redibujado geométrico de la pantalla
-         * para recalcular la matriz de proyección ortogonal sin estiramientos de aspect-ratio.
+         * Forzado de recalculo de proyección ortogonal para evitar estiramientos asimétricos
          */
-        const scene = document.getElementById('scene');
         scene.addEventListener('camera-init', () => {
+            // Retraso controlado para asegurar la inyección completa del feed de la cámara en el DOM
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
-            }, 500); // Pequeño delay de asentamiento del hardware de la cámara
+            }, 300);
         });
 
         /**
-         * POLÍTICA DE SEGURIDAD PRIVADA DE NAVEGADORES MÓVILES:
-         * Algunos navegadores detienen de forma agresiva la reproducción automática de streams de video.
-         * Forzamos el play en el elemento nativo una vez la ventana se estabilice por completo.
+         * Disparador de seguridad ante las políticas restrictivas de AutoPlay de navegadores móviles
          */
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                const video = document.getElementById('arjs-video');
-                if (video && video.paused) {
-                    video.play().catch(err => {
-                        console.warn("La reproducción automática de la cámara requirió interacción:", err);
-                    });
-                }
-            }, 1000);
-        });
+        window.addEventListener('touchstart', function() {
+            const video = document.getElementById('arjs-video');
+            if (video && video.paused) {
+                video.play().catch(err => console.log("Video Play interceptado o requiere interacción previa:", err));
+            }
+        }, { once: true }); // Se ejecuta solo la primera vez que se toca la pantalla
     </script>
 </body>
 </html>
