@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <title>Sólidos Geométricos RA - Con Gestos Táctiles</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
+
+    <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
+
+    <style>
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: transparent !important;
+        }
+
+        a-scene {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Menú Flotante Adaptable */
+        #menu-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            width: 85%;
+            max-width: 480px;
+            background: rgba(30, 30, 30, 0.9);
+            border-radius: 12px;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        #menu-container::-webkit-scrollbar {
+            height: 4px;
+        }
+        #menu-container::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+        }
+
+        .btn-solido {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            flex: 0 0 auto;
+        }
+
+        .btn-solido.active {
+            background: #e74c3c;
+        }
+
+        /* Instrucción didáctica en pantalla */
+        #instrucciones {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            pointer-events: none;
+            text-align: center;
+            width: 80%;
+            max-width: 280px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instrucciones">Usa 2 dedos para hacer zoom electrónico</div>
+
+    <div id="menu-container">
+        <button class="btn-solido active" onclick="cambiarSolido('cubo')">Cubo</button>
+        <button class="btn-solido" onclick="cambiarSolido('esfera')">Esfera</button>
+        <button class="btn-solido" onclick="cambiarSolido('cilindro')">Cilindro</button>
+        <button class="btn-solido" onclick="cambiarSolido('cono')">Cono</button>
+    </div>
+
+    <a-scene embedded 
+             vr-mode-ui="enabled: false"
+             arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
+             gesture-detector>
+        
+        <a-marker preset="hiro" 
+                  raycaster="objects: .clickable" 
+                  emitevents="true" 
+                  cursor="fuse: false; rayOrigin: mouse;">
+            
+            <a-entity id="contenedor-interactivo"
+                      position="0 0 0"
+                      gesture-handler="minScale: 0.1; maxScale: 1.5">
+                
+                <a-entity id="cubo" visible="true">
+                    <a-box position="0 0.5 0" scale="0.4 0.4 0.4" color="#2ecc71">
+                        <a-box scale="1.02 1.02 1.02" material="wireframe: true; color: #ffffff; wireframeLineWidth: 2"></a-box>
+                    </a-box>
+                </a-entity>
+
+                <a-entity id="esfera" visible="false">
+                    <a-sphere position="0 0.5 0" radius="0.25" color="#f1c40f">
+                        <a-sphere radius="0.252" material="wireframe: true; color: #000000; wireframeLineWidth: 1"></a-sphere>
+                    </a-sphere>
+                </a-entity>
+
+                <a-entity id="cilindro" visible="false">
+                    <a-cylinder position="0 0.5 0" radius="0.2" height="0.5" color="#3498db">
+                        <a-cylinder radius="0.202" height="0.502" material="wireframe: true; color: #ffffff; wireframeLineWidth: 2"></a-cylinder>
+                    </a-cylinder>
+                </a-entity>
+
+                <a-entity id="cono" visible="false">
+                    <a-cone position="0 0.5 0" radius-bottom="0.25" radius-top="0" height="0.5" color="#9b59b6">
+                        <a-cone radius-bottom="0.252" radius-top="0" height="0.502" material="wireframe: true; color: #ffffff; wireframeLineWidth: 2"></a-cone>
+                    </a-cone>
+                </a-entity>
+
+            </a-entity> </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        const solidosIds = ['cubo', 'esfera', 'cilindro', 'cono'];
+
+        function cambiarSolido(idSeleccionado) {
+            solidosIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.setAttribute('visible', id === idSeleccionado ? 'true' : 'false');
+            });
+
+            const botones = document.querySelectorAll('.btn-solido');
+            botones.forEach(boton => {
+                boton.classList.remove('active');
+                if (boton.getAttribute('onclick').includes(idSeleccionado)) {
+                    boton.classList.add('active');
+                    boton.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                }
+            });
+
+            // Resetea el tamaño del contenedor al cambiar de figura para evitar que una quede gigante o diminuta de la anterior interacción
+            document.getElementById('contenedor-interactivo').setAttribute('scale', '1 1 1');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const video = document.querySelector('video');
+                if (video && video.paused) {
+                    video.play().catch(e => console.log("Cámara lista."));
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
