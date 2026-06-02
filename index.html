@@ -3,39 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>Educación WebAR: Sólidos Geométricos</title>
+    <title>Educación WebAR: Sólidos Geométricos Corregidos</title>
     
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
 
     <style>
-        /* ==========================================================================
-           ESTILOS DE INYECCIÓN Y ESTABILIDAD (Anti-Pantalla en Blanco)
-           ========================================================================== */
+        /* ESTILOS ESTRICTOS ANTIDISTORSIÓN */
         html, body {
             width: 100%;
             height: 100%;
             margin: 0;
             overflow: hidden;
-            background-color: transparent;
+            background-color: #000; /* Fondo negro base por si tarda en cargar la cámara */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Fuerza al canvas de la escena a ocupar la pantalla completa en posición absoluta */
+        /* Fuerza al canvas a mantener proporciones reales sin estirarse en pantallas alargadas */
         a-scene {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100vw !important;
-            height: 100vh !important;
+            width: 100% !important;
+            height: 100% !important;
             z-index: 1;
         }
 
-        /* ==========================================================================
-           INTERFAZ DE USUARIO (UI) CON SCROLL RESPONSIVO
-           ========================================================================== */
+        /* Corrección para el elemento de video nativo que inyecta AR.js */
+        #arjs-video {
+            object-fit: cover !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }
+
+        /* INTERFAZ DE USUARIO (UI) */
         #ui-container {
             position: fixed;
             bottom: 24px;
@@ -43,35 +46,33 @@
             transform: translateX(-50%);
             width: 90%;
             max-width: 500px;
-            z-index: 9999; /* Z-index crítico para superponerse al canvas de AR.js */
-            background: rgba(20, 20, 20, 0.75);
+            z-index: 9999;
+            background: rgba(20, 20, 20, 0.8);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 12px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-sizing: border-box;
         }
 
-        /* Contenedor horizontal con scroll táctil nativo */
         .menu-scroll {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             overflow-y: hidden;
             white-space: nowrap;
-            padding-bottom: 4px; /* Espacio para evitar que el scrollbar pise los botones */
-            scrollbar-width: none; /* Oculta scrollbar en Firefox */
+            padding-bottom: 4px;
+            scrollbar-width: none;
         }
 
         .menu-scroll::-webkit-scrollbar {
-            display: none; /* Oculta scrollbar en Chrome/Safari */
+            display: none;
         }
 
-        /* Botones Interactivos */
         .btn-solido {
-            flex: 0 0 auto; /* Evita que los botones se encojan */
+            flex: 0 0 auto;
             padding: 10px 20px;
             background-color: rgba(255, 255, 255, 0.15);
             color: #ffffff;
@@ -80,43 +81,36 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-solido:hover {
-            background-color: rgba(255, 255, 255, 0.3);
         }
 
         .btn-solido.active {
-            background-color: #007AFF; /* Azul iOS/Educativo estándar */
+            background-color: #007AFF;
             color: #ffffff;
             border-color: #007AFF;
             box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
         }
 
-        /* Indicador de ayuda superior */
         #instrucciones {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             color: #fff;
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 13px;
             pointer-events: none;
             text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
 
-    <div id="instrucciones">Apunta al marcador 'Hiro' • Usa 1 o 2 dedos para interactuar</div>
+    <div id="instrucciones">Escanea el marcador 'Hiro' • Usa tus dedos para rotar/hacer zoom</div>
 
     <div id="ui-container">
         <div class="menu-scroll">
@@ -129,13 +123,10 @@
 
     <a-scene 
         embedded 
-        arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        arjs="sourceType: webcam; videoScaleMode: cover; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
         vr-mode-ui="enabled: false"
         gesture-detector>
         
-        <a-assets>
-            </a-assets>
-
         <a-marker preset="hiro" raycaster="objects: .clickable" emitevents="true" cursor="fuse: false; rayOrigin: mouse;">
             
             <a-entity 
@@ -217,7 +208,6 @@
     </a-scene>
 
     <script>
-        // Mapeo estructurado de las entidades de los sólidos
         const solidos = {
             cubo: document.getElementById('solido-cubo'),
             esfera: document.getElementById('solido-esfera'),
@@ -227,43 +217,42 @@
 
         const grupoMaestro = document.getElementById('grupo-maestro');
 
-        /**
-         * Alterna la visibilidad de los cuerpos geométricos y actualiza la interfaz.
-         * Resetea transformaciones para evitar deformaciones cruzadas.
-         */
         function cambiarSolido(solidoSeleccionado, botonActivo) {
-            // 1. Mutar visibilidad según el mapeo relacional
             for (const llave in solidos) {
                 if (solidos.hasOwnProperty(llave)) {
                     solidos[llave].setAttribute('visible', llave === solidoSeleccionado);
                 }
             }
 
-            // 2. Gestión de Estados de la UI (Remover clase activa anterior y asignarla al nuevo botón)
             document.querySelectorAll('.btn-solido').forEach(btn => {
                 btn.classList.remove('active');
             });
             botonActivo.classList.add('active');
 
-            // 3. Reseteo Crítico de Escala y Rotación
-            // Evita que los cálculos matemáticos de escala del sólido anterior distorsionen la nueva figura
+            // Reset de transformaciones
             grupoMaestro.setAttribute('scale', '1 1 1');
             grupoMaestro.setAttribute('rotation', '0 0 0');
         }
 
-        /**
-         * Disparador de Seguridad Automatizado:
-         * Previene bloqueos por las políticas de privacidad estrictas sobre autodespliegue de cámaras en iOS y Android.
-         */
+        // LÓGICA DE DETECCIÓN Y REDIMENSIONAMIENTO FORZADO
         window.addEventListener('DOMContentLoaded', () => {
+            // Forzar a la escena a recalcular sus dimensiones cuando la cámara de AR.js se inyecte
+            const scene = document.querySelector('a-scene');
+            
+            scene.addEventListener('camera-init', () => {
+                // Pequeño hack de delay para asegurar que el viewport del dispositivo se ha estabilizado
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('resize'));
+                }, 500);
+            });
+
+            // Disparador de seguridad para reproducción de video
             setTimeout(() => {
                 const video = document.querySelector('video');
                 if (video && video.paused) {
-                    video.play().catch(error => {
-                        console.warn("La reproducción automática de la cámara requirió interacción del usuario:", error);
-                    });
+                    video.play().catch(err => console.log("Cámara pausada por política del navegador. Esperando interacción."));
                 }
-            }, 1500); // Pequeña espera para asegurar el correcto montaje del DOM de AR.js
+            }, 1000);
         });
     </script>
 </body>
