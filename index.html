@@ -2,102 +2,119 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
 <title>WebAR Educativo - Sólidos Geométricos</title>
 
-<!-- A-Frame -->
+<!-- A-Frame 1.2.0 -->
 <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
 
 <!-- AR.js 3.4.5 -->
 <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.5/aframe/build/aframe-ar.js"></script>
 
 <!-- AR.js Gestures -->
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/marker-training/examples/libs/gesture-detector.js"></script>
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/marker-training/examples/libs/gesture-handler.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/examples/marker-training/examples/libs/gesture-detector.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@master/aframe/examples/marker-training/examples/libs/gesture-handler.js"></script>
 
 <style>
-/* =====================================================
-   REGLAS CRÍTICAS ANTI-PANTALLA EN BLANCO
-===================================================== */
+/* =========================================================
+   RESET GENERAL
+========================================================= */
 html,
 body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
     width: 100%;
     height: 100%;
-    margin: 0;
-    overflow: hidden;
-    background-color: transparent;
     font-family: Arial, Helvetica, sans-serif;
+    background: #000;
 }
 
-/* Escena AR ocupando toda la pantalla */
-a-scene {
-    position: absolute !important;
-    top: 0;
-    left: 0;
+/* =========================================================
+   CORRECCIÓN DE PROPORCIONES (ANTI-DISTORSIÓN)
+========================================================= */
+canvas,
+.a-canvas,
+#arjs-video,
+video {
     width: 100vw !important;
     height: 100vh !important;
-    z-index: 1;
+    object-fit: cover !important;
+    position: fixed !important;
+    top: 0;
+    left: 0;
 }
 
-/* =====================================================
-   MENÚ FLOTANTE RESPONSIVE CON SCROLL HORIZONTAL
-===================================================== */
+/* =========================================================
+   MENÚ RESPONSIVO TIPO CARRUSEL
+========================================================= */
 #menu {
     position: fixed;
     bottom: 15px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 99999;
 
-    width: 95%;
+    z-index: 9999;
+
+    width: calc(100% - 20px);
     max-width: 900px;
 
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
 
-    display: block;
+    display: flex;
+    gap: 10px;
 
     padding: 10px;
-    border-radius: 14px;
 
-    background: rgba(0, 0, 0, 0.65);
+    box-sizing: border-box;
+
+    background: rgba(0,0,0,0.55);
     backdrop-filter: blur(6px);
+
+    border-radius: 16px;
 
     -webkit-overflow-scrolling: touch;
 }
 
-/* Ocultar scrollbar visualmente */
 #menu::-webkit-scrollbar {
-    height: 4px;
+    height: 5px;
 }
 
-#menu button {
-    display: inline-block;
+#menu::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.4);
+    border-radius: 20px;
+}
 
-    margin: 0 5px;
-    padding: 12px 18px;
+.menu-btn {
+    flex: 0 0 auto;
 
     border: none;
-    border-radius: 10px;
+    outline: none;
 
-    background: #ffffff;
-    color: #111;
+    padding: 12px 18px;
+
+    border-radius: 12px;
 
     font-size: 15px;
     font-weight: bold;
 
+    color: white;
+    background: #444;
+
     cursor: pointer;
+
     transition: 0.25s;
 }
 
-#menu button.active {
-    background: #00c853;
-    color: white;
+.menu-btn.active {
+    background: #00AEEF;
+    transform: scale(1.05);
 }
 
-#menu button:hover {
+.menu-btn:hover {
     opacity: 0.9;
 }
 </style>
@@ -105,144 +122,163 @@ a-scene {
 
 <body>
 
-<!-- =====================================================
-     MENÚ DE SELECCIÓN DE SÓLIDOS
-===================================================== -->
+<!-- =======================================================
+     MENÚ DE FIGURAS
+======================================================= -->
 <div id="menu">
-    <button class="active" onclick="mostrarSolido('cubo', this)">Cubo</button>
-    <button onclick="mostrarSolido('esfera', this)">Esfera</button>
-    <button onclick="mostrarSolido('cilindro', this)">Cilindro</button>
-    <button onclick="mostrarSolido('cono', this)">Cono</button>
+
+    <button class="menu-btn active" onclick="mostrarFigura('cubo', this)">
+        Cubo
+    </button>
+
+    <button class="menu-btn" onclick="mostrarFigura('esfera', this)">
+        Esfera
+    </button>
+
+    <button class="menu-btn" onclick="mostrarFigura('cilindro', this)">
+        Cilindro
+    </button>
+
+    <button class="menu-btn" onclick="mostrarFigura('cono', this)">
+        Cono
+    </button>
+
 </div>
 
-<!-- =====================================================
+<!-- =======================================================
      ESCENA AR
-===================================================== -->
+======================================================= -->
 <a-scene
+
     embedded
+
     vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true; antialias: true;"
+
+    renderer="
+        logarithmicDepthBuffer: true;
+        antialias: true;
+        alpha: true;
+        precision: medium;
+    "
+
     gesture-detector
+
     arjs="
-        trackingMethod: best;
         sourceType: webcam;
+        videoScaleMode: cover;
         debugUIEnabled: false;
     "
 >
 
-    <!-- Cámara -->
-    <a-entity camera></a-entity>
-
-    <!-- Marcador Hiro -->
+    <!-- ===================================================
+         MARCADOR HIRO
+    ==================================================== -->
     <a-marker preset="hiro">
 
-        <!-- =====================================================
+        <!-- ===============================================
              ENTIDAD MAESTRA MANIPULABLE
-             (ZOOM Y ROTACIÓN)
-        ====================================================== -->
+             (ROTACIÓN + ZOOM)
+        ================================================ -->
         <a-entity
-            id="grupoSolidos"
-            position="0 0.4 0"
-            scale="1 1 1"
+
+            id="grupoFiguras"
+
+            position="0 0.5 0"
+
+            scale="0.4 0.4 0.4"
+
+            rotation="0 0 0"
+
             gesture-handler="
                 minScale: 0.1;
                 maxScale: 1.5;
             "
         >
 
-            <!-- ==========================================
+            <!-- ===========================================
                  CUBO
-                 Dimensiones idénticas en X,Y,Z
-            =========================================== -->
+            ============================================ -->
             <a-entity id="cubo" visible="true">
 
                 <!-- sólido -->
                 <a-box
-                    position="0 0 0"
-                    width="0.4"
-                    height="0.4"
-                    depth="0.4"
-                    color="#FF5252">
+                    color="#FF5252"
+                    depth="1"
+                    height="1"
+                    width="1">
                 </a-box>
 
                 <!-- aristas -->
                 <a-box
-                    position="0 0 0"
-                    width="0.405"
-                    height="0.405"
-                    depth="0.405"
-                    material="
-                        color: #000000;
-                        wireframe: true;
-                        wireframeLinewidth: 2;
-                    ">
+                    color="#FFFFFF"
+                    depth="1"
+                    height="1"
+                    width="1"
+                    scale="1.005 1.005 1.005"
+                    material="wireframe:true;">
                 </a-box>
 
             </a-entity>
 
-            <!-- ==========================================
+            <!-- ===========================================
                  ESFERA
-                 Simetría radial perfecta
-            =========================================== -->
+            ============================================ -->
             <a-entity id="esfera" visible="false">
 
                 <a-sphere
-                    radius="0.22"
-                    color="#2979FF">
+                    radius="0.6"
+                    color="#4CAF50">
                 </a-sphere>
 
                 <a-sphere
-                    radius="0.225"
-                    material="
-                        color: #FFFFFF;
-                        wireframe: true;
-                    ">
+                    radius="0.6"
+                    scale="1.005 1.005 1.005"
+                    color="#FFFFFF"
+                    material="wireframe:true;">
                 </a-sphere>
 
             </a-entity>
 
-            <!-- ==========================================
+            <!-- ===========================================
                  CILINDRO CIRCULAR RECTO
-            =========================================== -->
+            ============================================ -->
             <a-entity id="cilindro" visible="false">
 
                 <a-cylinder
-                    radius="0.18"
-                    height="0.45"
-                    color="#00C853">
+                    radius="0.45"
+                    height="1.2"
+                    color="#2196F3">
                 </a-cylinder>
 
                 <a-cylinder
-                    radius="0.185"
-                    height="0.455"
-                    material="
-                        color: #000000;
-                        wireframe: true;
-                    ">
+                    radius="0.45"
+                    height="1.2"
+                    scale="1.005 1.005 1.005"
+                    color="#FFFFFF"
+                    material="wireframe:true;">
                 </a-cylinder>
 
             </a-entity>
 
-            <!-- ==========================================
+            <!-- ===========================================
                  CONO CIRCULAR RECTO
-            =========================================== -->
+            ============================================ -->
             <a-entity id="cono" visible="false">
 
                 <a-cone
-                    radius-bottom="0.22"
+                    radius-bottom="0.6"
                     radius-top="0"
-                    height="0.45"
-                    color="#FFD600">
+                    height="1.3"
+                    color="#FFC107">
                 </a-cone>
 
                 <a-cone
-                    radius-bottom="0.225"
+                    radius-bottom="0.6"
                     radius-top="0"
-                    height="0.455"
-                    material="
-                        color: #000000;
-                        wireframe: true;
-                    ">
+                    height="1.3"
+                    scale="1.005 1.005 1.005"
+                    color="#FFFFFF"
+                    material="wireframe:true;">
                 </a-cone>
 
             </a-entity>
@@ -251,94 +287,120 @@ a-scene {
 
     </a-marker>
 
+    <!-- Cámara -->
+    <a-entity camera></a-entity>
+
 </a-scene>
 
 <script>
-/* =====================================================
-   REFERENCIAS
-===================================================== */
-const grupo = document.getElementById("grupoSolidos");
+/* =========================================================
+   VARIABLES GLOBALES
+========================================================= */
+const figuras = [
+    "cubo",
+    "esfera",
+    "cilindro",
+    "cono"
+];
 
-const solidos = {
-    cubo: document.getElementById("cubo"),
-    esfera: document.getElementById("esfera"),
-    cilindro: document.getElementById("cilindro"),
-    cono: document.getElementById("cono")
-};
+const escalaInicial = "0.4 0.4 0.4";
+const rotacionInicial = "0 0 0";
 
-/* =====================================================
-   CAMBIO DE FIGURA
-===================================================== */
-function mostrarSolido(nombre, botonActivo) {
+/* =========================================================
+   CAMBIO DE FIGURAS
+========================================================= */
+function mostrarFigura(nombreFigura, botonActual) {
 
-    // Ocultar todos
-    Object.values(solidos).forEach(solido => {
-        solido.setAttribute("visible", false);
+    figuras.forEach(figura => {
+        document
+            .getElementById(figura)
+            .setAttribute("visible", false);
     });
 
-    // Mostrar seleccionado
-    solidos[nombre].setAttribute("visible", true);
+    document
+        .getElementById(nombreFigura)
+        .setAttribute("visible", true);
 
-    // Restablecer escala
-    grupo.setAttribute("scale", "1 1 1");
-
-    // Estado visual botones
-    document.querySelectorAll("#menu button")
+    document
+        .querySelectorAll(".menu-btn")
         .forEach(btn => btn.classList.remove("active"));
 
-    botonActivo.classList.add("active");
+    botonActual.classList.add("active");
+
+    // Reiniciar transformaciones
+    const grupo = document.getElementById("grupoFiguras");
+
+    grupo.setAttribute("scale", escalaInicial);
+    grupo.setAttribute("rotation", rotacionInicial);
 }
 
-/* =====================================================
-   SEGURIDAD PARA ACTIVAR WEBCAM EN MÓVILES
-===================================================== */
+/* =========================================================
+   CORRECCIÓN DE MATRIZ DE PROYECCIÓN
+   (ANTI-DEFORMACIÓN)
+========================================================= */
+window.addEventListener("load", () => {
+
+    const scene = document.querySelector("a-scene");
+
+    scene.addEventListener("camera-init", () => {
+
+        setTimeout(() => {
+
+            window.dispatchEvent(
+                new Event("resize")
+            );
+
+        }, 300);
+
+    });
+
+});
+
+/* =========================================================
+   SEGURIDAD PARA REPRODUCCIÓN DE WEBCAM
+========================================================= */
 window.addEventListener("load", () => {
 
     setTimeout(() => {
 
-        const videos = document.querySelectorAll("video");
+        const video = document.querySelector("#arjs-video");
 
-        videos.forEach(video => {
-            if (video) {
-                video.setAttribute("playsinline", true);
-                video.setAttribute("muted", true);
+        if (video) {
 
-                const promise = video.play();
+            video.setAttribute("playsinline", true);
 
-                if (promise !== undefined) {
-                    promise.catch(() => {
-                        console.log("Esperando interacción del usuario...");
-                    });
-                }
+            const playPromise = video.play();
+
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {});
             }
-        });
+        }
 
-    }, 1500);
+    }, 1000);
+
 });
 
-/* =====================================================
-   SEGURIDAD EXTRA SI AR.JS CREA EL VIDEO DESPUÉS
-===================================================== */
-const observer = new MutationObserver(() => {
+/* =========================================================
+   REFORZAR RESIZE EN CAMBIOS DE ORIENTACIÓN
+========================================================= */
+window.addEventListener("orientationchange", () => {
 
-    const video = document.querySelector("video");
+    setTimeout(() => {
+        window.dispatchEvent(
+            new Event("resize")
+        );
+    }, 500);
 
-    if (video) {
-
-        video.setAttribute("playsinline", true);
-        video.setAttribute("muted", true);
-
-        setTimeout(() => {
-            video.play().catch(() => {});
-        }, 1000);
-
-        observer.disconnect();
-    }
 });
 
-observer.observe(document.body, {
-    childList: true,
-    subtree: true
+window.addEventListener("resize", () => {
+
+    setTimeout(() => {
+        window.dispatchEvent(
+            new Event("resize")
+        );
+    }, 100);
+
 });
 </script>
 
