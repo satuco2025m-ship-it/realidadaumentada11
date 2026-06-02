@@ -3,257 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>Educación WebAR: Sólidos Geométricos Corregidos</title>
-    
+    <title>WebAR: Sólidos Geométricos Educativos</title>
+
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
     <script src="https://raw.githack.com/fcor/arjs-gestures/master/dist/gestures.js"></script>
 
     <style>
-        /* ESTILOS ESTRICTOS ANTIDISTORSIÓN */
+        /* 3. Estilos Estrictos Anti-Distorsión Óptica y Reset de UI */
         html, body {
+            margin: 0;
+            padding: 0;
             width: 100%;
             height: 100%;
-            margin: 0;
             overflow: hidden;
-            background-color: #000; /* Fondo negro base por si tarda en cargar la cámara */
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            -webkit-tap-highlight-color: transparent;
+            background-color: #000;
         }
 
-        /* Fuerza al canvas a mantener proporciones reales sin estirarse en pantallas alargadas */
-        a-scene {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100% !important;
-            height: 100% !important;
-            z-index: 1;
-        }
-
-        /* Corrección para el elemento de video nativo que inyecta AR.js */
-        #arjs-video {
+        /* Fuerza al contenedor de la cámara y al canvas a cubrir la pantalla sin deformarse */
+        #arjs-video, .a-canvas {
             object-fit: cover !important;
             width: 100vw !important;
             height: 100vh !important;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
         }
 
-        /* INTERFAZ DE USUARIO (UI) */
-        #ui-container {
+        /* Interfaz de Usuario (UI) Flotante Superior */
+        .ui-container {
             position: fixed;
-            bottom: 24px;
+            top: 20px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
             max-width: 500px;
-            z-index: 9999;
-            background: rgba(20, 20, 20, 0.8);
+            z-index: 9999; /* Z-index ultra alto para sobreponerse a A-Frame */
+            background: rgba(20, 24, 35, 0.85);
             backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 12px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-sizing: border-box;
+            text-align: center;
         }
 
-        .menu-scroll {
+        .ui-title {
+            color: #fff;
+            margin: 0 0 10px 0;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        /* Carrusel horizontal responsive con Scroll */
+        .menu-carousel {
             display: flex;
             gap: 10px;
             overflow-x: auto;
             overflow-y: hidden;
             white-space: nowrap;
-            padding-bottom: 4px;
-            scrollbar-width: none;
+            padding-bottom: 5px;
+            scrollbar-width: none; /* Oculta scrollbar en Firefox */
         }
 
-        .menu-scroll::-webkit-scrollbar {
-            display: none;
+        .menu-carousel::-webkit-scrollbar {
+            display: none; /* Oculta scrollbar en Chrome/Safari */
         }
 
-        .btn-solido {
+        /* Botones del menú */
+        .btn-solid {
             flex: 0 0 auto;
             padding: 10px 20px;
-            background-color: rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            border: 2px solid transparent;
             border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s ease;
-            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
         }
 
-        .btn-solido.active {
-            background-color: #007AFF;
-            color: #ffffff;
-            border-color: #007AFF;
-            box-shadow: 0 0 12px rgba(0, 122, 255, 0.5);
+        .btn-solid:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        #instrucciones {
+        .btn-solid.active {
+            background: #3b82f6;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+            border-color: #60a5fa;
+        }
+
+        /* Panel de Información Pedagógica Dinámica */
+        .info-panel {
             position: fixed;
-            top: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
+            width: 85%;
+            max-width: 400px;
             z-index: 9999;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 5px solid #3b82f6;
             font-size: 13px;
-            pointer-events: none;
-            text-align: center;
+            line-height: 1.4;
+            pointer-events: none; /* Permite clicks a través del panel si es necesario */
+        }
+
+        .info-panel strong {
+            display: block;
+            font-size: 15px;
+            color: #60a5fa;
+            margin-bottom: 4px;
         }
     </style>
 </head>
 <body>
 
-    <div id="instrucciones">Escanea el marcador 'Hiro' • Usa tus dedos para rotar/hacer zoom</div>
-
-    <div id="ui-container">
-        <div class="menu-scroll">
-            <button class="btn-solido active" onclick="cambiarSolido('cubo', this)">Cubo</button>
-            <button class="btn-solido" onclick="cambiarSolido('esfera', this)">Esfera</button>
-            <button class="btn-solido" onclick="cambiarSolido('cilindro', this)">Cilindro</button>
-            <button class="btn-solido" onclick="cambiarSolido('cono', this)">Cono</button>
+    <div class="ui-container">
+        <h1 class="ui-title">Laboratorio de Geometría AR</h1>
+        <div class="menu-carousel">
+            <button class="btn-solid active" onclick="switchSolid('cubo')">Cubo</button>
+            <button class="btn-solid" onclick="switchSolid('esfera')">Esfera</button>
+            <button class="btn-solid" onclick="switchSolid('cilindro')">Cilindro</button>
+            <button class="btn-solid" onclick="switchSolid('cono')">Cono</button>
         </div>
     </div>
 
+    <div class="info-panel" id="educational-info">
+        <strong id="info-title">Cubo (Hexaedro Regular)</strong>
+        <span id="info-desc">Poliedro regular limitado por 6 caras cuadradas congruentes. Relación de aristas 1:1:1.</span>
+    </div>
+
     <a-scene 
-        embedded 
-        arjs="sourceType: webcam; videoScaleMode: cover; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+        arjs="sourceType: webcam; videoScaleMode: cover; debugUIEnabled: false;"
+        embedded
+        renderer="logarithmicDepthBuffer: true; antialias: true;"
         vr-mode-ui="enabled: false"
-        gesture-detector>
-        
-        <a-marker preset="hiro" raycaster="objects: .clickable" emitevents="true" cursor="fuse: false; rayOrigin: mouse;">
+        gesture-detector
+        id="scene">
+
+        <a-entity camera position="0 0 0"></a-entity>
+        <a-light type="ambient" intensity="0.7"></a-light>
+        <a-light type="directional" intensity="0.6" position="1 4 3"></a-light>
+
+        <a-marker preset="hiro" id="hiro-marker" raycaster="objects: .clickable" emitevents="true">
             
             <a-entity 
-                id="grupo-maestro" 
-                position="0 0.2 0"
-                scale="1 1 1"
-                gesture-handler="minScale: 0.2; maxScale: 2.0">
-                
-                <a-entity id="solido-cubo" class="clickable" visible="true">
-                    <a-box 
-                        position="0 0 0" 
-                        scale="0.4 0.4 0.4" 
-                        color="#FF3B30" 
-                        material="roughness: 0.3; metalness: 0.1">
-                    </a-box>
-                    <a-box 
-                        position="0 0 0" 
-                        scale="0.402 0.402 0.402" 
-                        color="#FFFFFF" 
-                        material="wireframe: true; wireframeLineWidth: 2">
-                    </a-box>
+                id="master-container" 
+                position="0 0.5 0" 
+                scale="0.4 0.4 0.4"
+                gesture-handler="minScale: 0.1; maxScale: 1.5">
+
+                <a-entity id="solid-cubo" class="geometric-solid" visible="true">
+                    <a-box width="1" height="1" depth="1" material="color: #EF4444; roughness: 0.3; metalness: 0.1;"></a-box>
+                    <a-box width="1" height="1" depth="1" scale="1.005 1.005 1.005" material="color: #ffffff; wireframe: true; wireframeLinewidth: 2;"></a-box>
+                    
+                    <a-text value="Cara Cuadrada" position="0 0.6 0" align="center" scale="1 1 1" color="#fff" bg-color="#000" look-at="[camera]"></a-text>
+                    <a-text value="Arista (a)" position="0.6 0 0" align="center" scale="0.8 0.8 0.8" color="#FFEB3B"></a-text>
                 </a-entity>
 
-                <a-entity id="solido-esfera" class="clickable" visible="false">
-                    <a-sphere 
-                        position="0 0 0" 
-                        radius="0.25" 
-                        color="#34C759" 
-                        material="roughness: 0.3">
-                    </a-sphere>
-                    <a-sphere 
-                        position="0 0 0" 
-                        radius="0.251" 
-                        color="#000000" 
-                        material="wireframe: true; wireframeLineWidth: 1.5">
-                    </a-sphere>
+                <a-entity id="solid-esfera" class="geometric-solid" visible="false">
+                    <a-sphere radius="0.6" segments-width="32" segments-height="32" material="color: #10B981; roughness: 0.2; metalness: 0.1;"></a-sphere>
+                    <a-sphere radius="0.6" scale="1.005 1.005 1.005" segments-width="16" segments-height="16" material="color: #ffffff; wireframe: true; wireframeLinewidth: 1;"></a-sphere>
+                    
+                    <a-text value="Centro (O)" position="0 0 0" align="center" scale="0.8 0.8 0.8" color="#fff"></a-text>
+                    <a-text value="Radio (r)" position="0.4 0.2 0" align="center" scale="0.8 0.8 0.8" color="#FFEB3B"></a-text>
                 </a-entity>
 
-                <a-entity id="solido-cilindro" class="clickable" visible="false">
-                    <a-cylinder 
-                        position="0 0 0" 
-                        radius="0.2" 
-                        height="0.5" 
-                        color="#AF52DE" 
-                        material="roughness: 0.3">
-                    </a-cylinder>
-                    <a-cylinder 
-                        position="0 0 0" 
-                        radius="0.201" 
-                        height="0.502" 
-                        color="#FFFFFF" 
-                        material="wireframe: true; wireframeLineWidth: 1.5">
-                    </a-cylinder>
+                <a-entity id="solid-cilindro" class="geometric-solid" visible="false">
+                    <a-cylinder radius="0.5" height="1.2" segments-radial="32" material="color: #F59E0B; roughness: 0.3; metalness: 0.1;"></a-cylinder>
+                    <a-cylinder radius="0.5" height="1.2" scale="1.005 1.005 1.005" segments-radial="16" material="color: #ffffff; wireframe: true; wireframeLinewidth: 1.5;"></a-cylinder>
+                    
+                    <a-text value="Base Circular" position="0 0.65 0" align="center" scale="0.8 0.8 0.8" color="#fff"></a-text>
+                    <a-text value="Altura (h)" position="0.6 0 0" align="center" scale="0.8 0.8 0.8" color="#FFEB3B"></a-text>
                 </a-entity>
 
-                <a-entity id="solido-cono" class="clickable" visible="false">
-                    <a-cone 
-                        position="0 0 0" 
-                        radius-bottom="0.25" 
-                        radius-top="0" 
-                        height="0.5" 
-                        color="#FFCC00" 
-                        material="roughness: 0.3">
-                    </a-cone>
-                    <a-cone 
-                        position="0 0 0" 
-                        radius-bottom="0.252" 
-                        radius-top="0" 
-                        height="0.502" 
-                        color="#000000" 
-                        material="wireframe: true; wireframeLineWidth: 1.5">
-                    </a-cone>
+                <a-entity id="solid-cono" class="geometric-solid" visible="false">
+                    <a-cone radius-bottom="0.6" radius-top="0" height="1.2" segments-radial="32" material="color: #8B5CF6; roughness: 0.3; metalness: 0.1;"></a-cone>
+                    <a-cone radius-bottom="0.6" radius-top="0" height="1.2" scale="1.005 1.005 1.005" segments-radial="16" material="color: #ffffff; wireframe: true; wireframeLinewidth: 1.5;"></a-cone>
+                    
+                    <a-text value="Cuspide / Vertice" position="0 0.65 0" align="center" scale="0.8 0.8 0.8" color="#fff"></a-text>
+                    <a-text value="Generatriz (g)" position="0.5 0.2 0" align="center" scale="0.8 0.8 0.8" color="#FFEB3B"></a-text>
                 </a-entity>
 
             </a-entity>
         </a-marker>
-
-        <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-        const solidos = {
-            cubo: document.getElementById('solido-cubo'),
-            esfera: document.getElementById('solido-esfera'),
-            cilindro: document.getElementById('solido-cilindro'),
-            cono: document.getElementById('solido-cono')
+        // Datos pedagógicos de los sólidos para la actualización dinámica de la UI
+        const educationalData = {
+            cubo: {
+                title: "Cubo (Hexaedro Regular)",
+                desc: "Poliedro regular limitado por 6 caras cuadradas congruentes. Tiene 8 vértices y 12 aristas de igual medida. Relación aspectual exacta 1:1:1."
+            },
+            esfera: {
+                title: "Esfera",
+                desc: "Sólido de revolución generado por la rotación de un semicírculo alrededor de su diámetro. Todos los puntos de su superficie equidistan del centro."
+            },
+            cilindro: {
+                title: "Cilindro Circular Recto",
+                desc: "Cuerpo geométrico redondo generado por la rotación de un rectángulo alrededor de uno de sus lados. Sus bases paralelas son círculos congruentes."
+            },
+            cono: {
+                title: "Cono Circular Recto",
+                desc: "Sólido de revolución originado al girar un triángulo rectángulo sobre uno de sus catetos. El vértice superior (cúspide) se alinea exactamente sobre el centro de la base."
+            }
         };
 
-        const grupoMaestro = document.getElementById('grupo-maestro');
-
-        function cambiarSolido(solidoSeleccionado, botonActivo) {
-            for (const llave in solidos) {
-                if (solidos.hasOwnProperty(llave)) {
-                    solidos[llave].setAttribute('visible', llave === solidoSeleccionado);
+        /**
+         * Manejador de intercambio entre sólidos tridimensionales
+         * @param {string} selectedSolid - Id del sólido a mostrar ('cubo', 'esfera', 'cilindro', 'cono')
+         */
+        function switchSolid(selectedSolid) {
+            // 1. Alternar visibilidad de las entidades 3D en A-Frame
+            const solids = document.querySelectorAll('.geometric-solid');
+            solids.forEach(solid => {
+                if (solid.id === `solid-${selectedSolid}`) {
+                    solid.setAttribute('visible', 'true');
+                } else {
+                    solid.setAttribute('visible', 'false');
                 }
-            }
-
-            document.querySelectorAll('.btn-solido').forEach(btn => {
-                btn.classList.remove('active');
             });
-            botonActivo.classList.add('active');
 
-            // Reset de transformaciones
-            grupoMaestro.setAttribute('scale', '1 1 1');
-            grupoMaestro.setAttribute('rotation', '0 0 0');
+            // 2. Actualizar el estado activo en los botones de la interfaz HTML
+            const buttons = document.querySelectorAll('.btn-solid');
+            buttons.forEach(btn => {
+                if (btn.getAttribute('onclick').includes(selectedSolid)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // 3. Actualizar panel dinámico de datos pedagógicos
+            document.getElementById('info-title').innerText = educationalData[selectedSolid].title;
+            document.getElementById('info-desc').innerText = educationalData[selectedSolid].desc;
+
+            // 4. Reset del contenedor Maestro para evitar acumulación de deformaciones por gestos
+            const masterContainer = document.getElementById('master-container');
+            masterContainer.setAttribute('scale', '0.4 0.4 0.4');
+            masterContainer.setAttribute('rotation', '0 0 0');
         }
 
-        // LÓGICA DE DETECCIÓN Y REDIMENSIONAMIENTO FORZADO
-        window.addEventListener('DOMContentLoaded', () => {
-            // Forzar a la escena a recalcular sus dimensiones cuando la cámara de AR.js se inyecte
-            const scene = document.querySelector('a-scene');
-            
-            scene.addEventListener('camera-init', () => {
-                // Pequeño hack de delay para asegurar que el viewport del dispositivo se ha estabilizado
-                setTimeout(() => {
-                    window.dispatchEvent(new Event('resize'));
-                }, 500);
-            });
-
-            // Disparador de seguridad para reproducción de video
+        /**
+         * Corrección de Relación de Aspecto Óptico (Anti-Distorsión de Pantalla)
+         * Dispara un evento de redimensionamiento tras la inicialización de la cámara para forzar el recalculo de matrices.
+         */
+        const sceneEl = document.getElementById('scene');
+        sceneEl.addEventListener('camera-init', () => {
             setTimeout(() => {
-                const video = document.querySelector('video');
-                if (video && video.paused) {
-                    video.play().catch(err => console.log("Cámara pausada por política del navegador. Esperando interacción."));
-                }
-            }, 1000);
+                window.dispatchEvent(new Event('resize'));
+            }, 500); // Pequeño delay de asentamiento mecánico
         });
+
+        /**
+         * Disparador de Seguridad (Autoplay Bypass de Políticas de Privacidad)
+         * Fuerza el play del video inyectado por AR.js en navegadores móviles restrictivos (Safari iOS, Chrome Android).
+         */
+        window.addEventListener('click', () => {
+            const video = document.getElementById('arjs-video');
+            if (video && video.paused) {
+                video.play().catch(err => console.log("Webcam Autoplay preventivo ejecutado con éxito.", err));
+            }
+        }, { once: true }); // Solo se ejecuta al primer toque del usuario
     </script>
 </body>
 </html>
